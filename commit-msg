@@ -1,0 +1,36 @@
+#!/bin/sh
+BRANCH_NAME_PATTERN=""
+existingFeatureNumbersPattern="^(#[0-9]+[[:space:]]*)+(.*)"
+featureNumberPattern="[0-9]+"
+currentBranch=`git rev-parse --abbrev-ref HEAD`
+if [[ $currentBranch =~ $BRANCH_NAME_PATTERN ]]
+then
+	n=${#BASH_REMATCH[*]}
+	foundGroups=()
+	for (( i=1; i<=$n; i++ ))
+	do
+		foundGroups+=(${BASH_REMATCH[$i]})
+	done
+	prefix=""
+	for group in ${foundGroups[@]}
+	do
+		if [[ $group =~ $featureNumberPattern ]]; then
+			prefixPart="#$group"
+			if [[ $i -gt 1 ]]; then
+				prefixPart=" $prefixPart"
+			fi
+			prefix="$prefix$prefixPart"
+		else
+			continue;
+		fi
+	done
+	commitMessage=`cat $1`
+	if [[ $commitMessage =~ $existingFeatureNumbersPattern ]]
+	then
+		commitMessage=${BASH_REMATCH[2]}
+	fi
+	newMessage="$prefix $commitMessage"
+	echo $newMessage > $1
+else
+	echo "no feature number found in branch name"
+fi
